@@ -27,8 +27,8 @@ process merge_fastq {
 	input:
 	tuple val(SampleName),path(SamplePath)
 	output:
-	tuple val(SampleName),path("${SampleName}_filtered.{fastq,fastq.gz}"),emit:reads
-	path ("${SampleName}_readstats.csv")
+	tuple val(SampleName),path("${SampleName}.{fastq,fastq.gz}"),emit:reads
+
 	shell:
 	"""
 	count=\$(ls -1 ${SamplePath}/*.gz 2>/dev/null | wc -l)
@@ -92,12 +92,12 @@ process sistr {
     input:
     val (SampleName)
     path (cons)
-    ouput:
+    output:
     path ("${SampleName}_serotype.csv")
     script:
 
     """
-    sistr_cmd -i ${cons} ${SampleName} -f csv -o ${SampleName}_serotype.csv --qc
+    sistr -i ${cons} ${SampleName} -f csv -o ${SampleName}_serotype.csv --qc
     """
 }
 
@@ -107,8 +107,8 @@ process busco {
     input:
     val (SampleName)
     path (cons)
-    ouput:
-    path ("${SampleName}_busco")
+    output:
+    path ("${SampleName}_busco_results")
     script:
 
     """
@@ -117,7 +117,7 @@ process busco {
 }
 
 
-process process make_limsfile {
+process make_limsfile {
 	label "low"
 	publishDir "${params.out_dir}/LIMS",mode:"copy"
 	input:
@@ -132,6 +132,28 @@ process process make_limsfile {
 	"""
 }
 
+process make_report {
+	label "low"
+	publishDir "${params.out_dir}/reports",mode:"copy"
+	input:
+	path(rmdfile)
+	path(limsfile)
+
+	output:
+	path("Salmonella_report.html")
+
+	script:
+
+	"""
+	
+	cp ${rmdfile} rmdfile_copy.Rmd
+	
+	cp ${limsfile} limsfile.csv
+
+	Rscript -e 'rmarkdown::render(input="rmdfile_copy.Rmd",params=list(lims="limsfile.csv"),output_file="Salmonella_report.html")'
+	"""
+
+}
 
 
 
@@ -150,5 +172,9 @@ workflow {
     }
     sistr (dragonflye.out.sample,dragonflye.out.assembly)
     make_limsfile (sistr.out.collect())
+	busco(dragonflye.out.sample,dragonflye.out.assembly)
+
+	rmd_file=file("${baseDir}/Salmonella_report.Rmd")
+	make_report (rmd_file,make_limsfile.out)
 
 }
