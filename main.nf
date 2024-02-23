@@ -102,7 +102,7 @@ process sistr {
 }
 
 process busco {
-    label "medium"
+    label "low"
     publishDir "${params.out_dir}/busco",mode:"copy"
     input:
     val (SampleName)
