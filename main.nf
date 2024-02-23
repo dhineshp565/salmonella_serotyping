@@ -108,11 +108,12 @@ process busco {
     val (SampleName)
     path (cons)
     output:
-    path ("${SampleName}_busco_results")
+    path ("${SampleName}_busco.txt")
     script:
 
     """
     busco -i ${cons} -m genome -l bacteria_odb10 -o ${SampleName}_busco_results
+	mv ${SampleName}_busco_results/*.txt ${SampleName}_busco.txt
     """
 }
 
@@ -138,6 +139,8 @@ process make_report {
 	input:
 	path(rmdfile)
 	path(limsfile)
+	path (csvfile)
+	path(busco)
 
 	output:
 	path("Salmonella_report.html")
@@ -147,10 +150,10 @@ process make_report {
 	"""
 	
 	cp ${rmdfile} rmdfile_copy.Rmd
-	
+	cp ${csvfile} samples.csv
 	cp ${limsfile} limsfile.csv
 
-	Rscript -e 'rmarkdown::render(input="rmdfile_copy.Rmd",params=list(lims="limsfile.csv"),output_file="Salmonella_report.html")'
+	Rscript -e 'rmarkdown::render(input="rmdfile_copy.Rmd",params=list(lims="limsfile.csv",csv="samples.csv"),output_file="Salmonella_report.html")'
 	"""
 
 }
@@ -175,6 +178,6 @@ workflow {
 	busco(dragonflye.out.sample,dragonflye.out.assembly)
 
 	rmd_file=file("${baseDir}/Salmonella_report.Rmd")
-	make_report (rmd_file,make_limsfile.out)
+	make_report (rmd_file,make_limsfile.out,make_csv.out,busco.out.collect())
 
 }
