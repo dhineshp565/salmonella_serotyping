@@ -135,7 +135,7 @@ process make_limsfile {
 
 process make_report {
 	label "low"
-	publishDir "${params.out_dir}/reports",mode:"copy"
+	publishDir "${params.out_dir}/",mode:"copy"
 	input:
 	path(rmdfile)
 	path(limsfile)
