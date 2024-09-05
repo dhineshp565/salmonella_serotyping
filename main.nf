@@ -92,12 +92,17 @@ process sistr {
     input:
     val (SampleName)
     path (cons)
+	path(version)
     output:
     path ("${SampleName}_serotype.csv")
     script:
 
     """
-    sistr -i ${cons} ${SampleName} -f csv -o ${SampleName}_serotype.csv --qc
+    sistr -i ${cons} ${SampleName} -f csv -o ${SampleName}_sero.csv --qc
+
+	sed -i 's/genome/id/g' ${SampleName}_sero.csv
+
+	paste -d ',' ${SampleName}_sero.csv ${version} > ${SampleName}_serotype.csv
     """
 }
 
@@ -173,7 +178,8 @@ workflow {
 	} else {
         dragonflye(merge_fastq.out)           
     }
-    sistr (dragonflye.out.sample,dragonflye.out.assembly)
+	version=file("${baseDir}/software_version.csv")
+    sistr (dragonflye.out.sample,dragonflye.out.assembly,version)
     make_limsfile (sistr.out.collect())
 	busco(dragonflye.out.sample,dragonflye.out.assembly)
 
