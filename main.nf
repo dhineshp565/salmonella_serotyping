@@ -130,11 +130,11 @@ process make_limsfile {
 	path (serotyping_results)
 
 	output:
-	path("Salmonella_LIMS_file.csv")
+	path("*.csv")
 	
 	script:
 	"""
-	awk 'FNR==1 && NR!=1 { while (/^cgm/) getline; } 1 {print}' ${serotyping_results} > Salmonella_LIMS_file.csv
+	awk 'FNR==1 && NR!=1 { while (/^cgm/) getline; } 1 {print}' ${serotyping_results} > Salmonella_LIMS_file_\$(date +"%Y%m%d_%H%M%S").csv
 	"""
 }
 
